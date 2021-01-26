@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: image-cloner-controller
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+        - args:
+            - --metrics-addr=127.0.0.1:8080
+            - --enable-leader-election
+          command:
+            - /manager
+          image: image-cloner
+          name: manager
+          resources:
+            limits:
+              cpu: 100m
+              memory: 30Mi
+            requests:
+              cpu: 100m
+              memory: 20Mi
+              ## Requiered to run deployment with minikube
+          imagePullPolicy: Never
+#      imagePullSecrets:
+#        - name: registrypullsecret
+      terminationGracePeriodSeconds: 10
