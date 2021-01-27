@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"github.com/cargaona/kubermatic-challenge/pkg/container"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,11 +17,10 @@ type ReconcileDaemonset struct {
 }
 
 //Do we need this one?
-var _ reconcile.Reconciler = &ReconcileDeployment{}
+//var _ reconcile.Reconciler = &ReconcileDeployment{}
 
 func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	instance := &appsv1.DaemonSet{}
-
 	// Ignore all pods on kube-system namespace.
 	if request.Namespace == "kube-system" {
 		r.Logger.Info("Ignoring application since it's deployed on the kube-system namespace")
@@ -32,29 +32,38 @@ func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Re
 		r.Logger.Error(err, "Could not find Daemonset")
 		return reconcile.Result{}, nil
 	}
-	// False if is from dockerhub true if is from backupRegistry
-	if container.CheckImageSource(ctx, instance) {
-		r.Logger.Info("Image already backuped")
+
+	ImageToBackupExist, images := container.CheckImagesSource(ctx, instance.Spec.Template.Spec)
+	if !ImageToBackupExist {
+		r.Logger.Info("Images already backed")
 		return reconcile.Result{}, nil
 	}
 
-	image, err := container.CopyImageToBackUpRegistry(ctx, instance)
+	newImages, err := container.CopyImagesToBackUpRegistry(ctx, images)
 	if err != nil {
 		r.Logger.Error(err, "Failed to copy the original image to the backup registry")
 		return reconcile.Result{}, err
 	}
 
-	err = container.UpdateImageFromResource(ctx, instance, image)
+	// Update Image on Spec.
+	for key, value := range newImages {
+		instance.Spec.Template.Spec.Containers[key].Image = value
+	}
+
+	// Apply the changes on the live object
+	err = r.Client.Update(ctx, instance)
 	if err != nil {
-		r.Logger.Error(err, "Failed to update the image of the given resource")
+		r.Logger.Error(err, "Error updating the pod")
 		return reconcile.Result{}, err
 	}
 
-	err = container.ValidateRedeployedApplication(ctx, instance, image)
+	//TODO pass just the instance object to the function
+	err = container.ValidateRedeployedDaemonset(ctx, instance.Status.NumberUnavailable, instance.Spec.Template.Spec, newImages)
 	if err != nil {
 		r.Logger.Error(err, "The validation was not successful.")
 		return reconcile.Result{}, err
 	}
 
+	r.Logger.Info(fmt.Sprintf("Reconcile completed for Daemonset: %s on Namespace: %s", instance.Name, request.NamespacedName))
 	return reconcile.Result{}, nil
 }

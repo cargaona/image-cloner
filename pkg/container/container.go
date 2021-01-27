@@ -2,20 +2,55 @@ package container
 
 import (
 	"context"
+	"fmt"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	v1 "k8s.io/api/core/v1"
+	"strings"
 )
 
-func CheckImageSource(ctx context.Context, instance interface{}) bool {
-	return true
+func CheckImagesSource(ctx context.Context, images v1.PodSpec) (bool, map[int]string) {
+	imagesToBackup := make(map[int]string)
+	for index, container := range images.Containers {
+		if imageNotFromBackupRegistry(container.Image) {
+			imagesToBackup[index] = container.Image
+		}
+	}
+	// Nothing to backup
+	if len(imagesToBackup) == 0 {
+		return false, imagesToBackup
+	}
+
+	return true, imagesToBackup
 }
 
-func CopyImageToBackUpRegistry(ctx context.Context, instance interface{}) (string, error){
-	return "", nil
+func imageNotFromBackupRegistry(image string) bool {
+	backupRegistry := "quay.io/cargaona/"
+	//Can be a better validation
+	if strings.Contains(image, backupRegistry) {
+		return true
+	}
+	return false
 }
 
-func UpdateImageFromResource(ctx context.Context, instance interface{}, image string) error {
-	return nil
+func CopyImagesToBackUpRegistry(ctx context.Context, images map[int]string) (map[int]string, error) {
+	oldImageName, _ := name.ParseReference("whoami")
+	oldRemoteImage, _:= remote.Image(oldImageName)
+	newImageName, _ := name.ParseReference("whoamibackup")
+	remote.Write(newImageName, oldRemoteImage)
+	return nil, nil
 }
 
-func ValidateRedeployedApplication(ctx context.Context, instance interface{}, magfe string) error {
+func ValidateRedeployedDaemonset(ctx context.Context, status int32, deployedImages v1.PodSpec, mustHaveImages map[int]string) error {
+	if status > 0 {
+		return fmt.Errorf("there are unavailable daemonsets")
+	}
+	for key, value := range mustHaveImages {
+		if deployedImages.Containers[key].Image == value {
+			continue
+		} else {
+			return fmt.Errorf("image %s from container %s was not redeployed succesfully", value, deployedImages.Containers[key].Name)
+		}
+	}
 	return nil
 }
