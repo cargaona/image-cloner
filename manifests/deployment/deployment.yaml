@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: image-cloner-controller
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+        - args:
+              - --metrics-addr=127.0.0.1:8080
+              - --enable-leader-election
+          command:
+              - /manager
+          image: quay.io/cargaona/image-cloner-controller:latest
+          name: manager
+          resources:
+            limits:
+              cpu: 100m
+              memory: 30Mi
+            requests:
+              cpu: 100m
+              memory: 20Mi
+          volumeMounts:
+            - mountPath: /root/.docker/doc
+              name: docker-configuration-volume
+          env:
+            - name: MAX_CONCURRENT_RECONCILES
+              valueFrom:
+                configMapKeyRef:
+                  key: MAX_CONCURRENT_RECONCILES
+                  name: image-cloner-configuration
+            - name: NAMESPACES_TO_IGNORE
+              valueFrom:
+                configMapKeyRef:
+                  key: NAMESPACES_TO_IGNORE
+                  name: image-cloner-configuration
+            - name: BACKUP_REGISTRY
+              valueFrom:
+                configMapKeyRef:
+                  key: BACKUP_REGISTRY
+                  name: image-cloner-configuration
+      volumes:
+        - name: docker-configuration-volume
+          configMap:
+            name: docker-configuration
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-configuration
+data:
+  config.json: |
+    {
+            "auths": {
+                    "quay.io": {
+                            "auth": "your-keys"
+                    }
+            }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-cloner-configuration
+data:
+  NAMESPACES_TO_IGNORE: "kube-system"
+  MAX_CONCURRENT_RECONCILES: "5"
+  BACKUP_REGISTRY: "your-registry"
