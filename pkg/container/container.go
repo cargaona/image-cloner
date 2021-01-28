@@ -9,12 +9,11 @@ import (
 	"strings"
 )
 
-const backupRegistry = "quay.io/cargaona"
 
-func CheckImagesSource(ctx context.Context, images v1.PodSpec) (bool, map[int]string) {
+func CheckImagesSource(ctx context.Context, images v1.PodSpec, backupRegistry string) (bool, map[int]string) {
 	imagesToBackup := make(map[int]string)
 	for index, container := range images.Containers {
-		if imageFromBackupRegistry(container.Image) == false {
+		if imageFromBackupRegistry(container.Image, backupRegistry) == false {
 			imagesToBackup[index] = container.Image
 		}
 	}
@@ -26,7 +25,7 @@ func CheckImagesSource(ctx context.Context, images v1.PodSpec) (bool, map[int]st
 	return true, imagesToBackup
 }
 
-func imageFromBackupRegistry(image string) bool {
+func imageFromBackupRegistry(image string, backupRegistry string) bool {
 	//Can be a better validation
 	if strings.Contains(image, backupRegistry) {
 		return true
@@ -34,7 +33,7 @@ func imageFromBackupRegistry(image string) bool {
 	return false
 }
 
-func CopyImagesToBackUpRegistry(ctx context.Context, images map[int]string) (map[int]string, error) {
+func CopyImagesToBackUpRegistry(ctx context.Context, images map[int]string, backupRegistry string) (map[int]string, error) {
 	newImages := make(map[int]string)
 	for key, imageName := range images {
 		image, err := crane.Pull(imageName)

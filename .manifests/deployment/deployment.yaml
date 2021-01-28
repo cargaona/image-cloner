@@ -64,7 +64,7 @@ data:
     {
             "auths": {
                     "quay.io": {
-                            "auth": "yourkey"
+                            "auth": "Y2FyZ2FvbmE6c29tZXN0cm9uZ3Bhc3N3b3Jk"
                     }
             }
     }
@@ -77,4 +77,4 @@ metadata:
 data:
   NAMESPACES_TO_IGNORE: "kube-system"
   MAX_CONCURRENT_RECONCILES: "5"
-  BACKUP_REGISTRY: "<your-registry>"
+  BACKUP_REGISTRY: "quay.io/cargaona"

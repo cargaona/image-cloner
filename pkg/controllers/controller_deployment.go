@@ -3,8 +3,12 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/cargaona/kubermatic-challenge/pkg/container"
+
 	"github.com/go-logr/logr"
+
+	"github.com/cargaona/kubermatic-challenge/pkg/configuration"
+	"github.com/cargaona/kubermatic-challenge/pkg/container"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,8 +18,8 @@ import (
 type ReconcileDeployment struct {
 	Client client.Client
 	Logger logr.Logger
+	Config   configuration.Config
 }
-
 
 func (r *ReconcileDeployment) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	instance := &appsv1.Deployment{}
@@ -31,13 +35,13 @@ func (r *ReconcileDeployment) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, nil
 	}
 
-	imageToBackupExist, images := container.CheckImagesSource(ctx, instance.Spec.Template.Spec)
+	imageToBackupExist, images := container.CheckImagesSource(ctx, instance.Spec.Template.Spec, r.Config.BackupRegistry)
 	if !imageToBackupExist {
 		r.Logger.Info(fmt.Sprintf("Image already backed for application: %s", instance.Name))
 		return reconcile.Result{}, nil
 	}
 
-	newImages, err := container.CopyImagesToBackUpRegistry(ctx, images)
+	newImages, err := container.CopyImagesToBackUpRegistry(ctx, images, r.Config.BackupRegistry)
 	if err != nil {
 		r.Logger.Error(err, "Failed to copy the original image to the backup registry")
 		return reconcile.Result{}, err
@@ -48,7 +52,7 @@ func (r *ReconcileDeployment) Reconcile(ctx context.Context, request reconcile.R
 		instance.Spec.Template.Spec.Containers[key].Image = value
 	}
 
-	// Apply the changes on the live object
+	// Apply the changes on the live object.
 	err = r.Client.Update(ctx, instance)
 	if err != nil {
 		r.Logger.Error(err, "Error updating the pod")

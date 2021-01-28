@@ -1,7 +1,7 @@
 ## Image-cloner-controller
 
 Image-cloner-controller is a Kubernetes controller that copies your public images deployed on your cluster to a container-registry you choose.
-The motivation to this controller is that not owned images can be randomly deleted by someone else, and your pods will not have images to redeploy themselves for any reason.
+The motivation to this controller is to protect your resources from the risk of not owned images that can be randomly deleted by someone else.
 
 ### Installation
 There is a makefile to help with the development of this project and also will serve to install the controller in your cluster.
@@ -14,7 +14,7 @@ There is a makefile to help with the development of this project and also will s
 apiVersion: v1
 kind: ConfigMap
 metadata:
-name: docker-config
+name: docker-configuration
 data:
 config.json: |
         {

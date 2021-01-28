@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/cargaona/kubermatic-challenge/pkg/configuration"
 	"github.com/cargaona/kubermatic-challenge/pkg/container"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -14,8 +15,8 @@ import (
 type ReconcileDaemonset struct {
 	Client client.Client
 	Logger logr.Logger
+	Config configuration.Config
 }
-
 
 func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	instance := &appsv1.DaemonSet{}
@@ -32,13 +33,13 @@ func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Re
 		return reconcile.Result{}, nil
 	}
 
-	imageToBackupExist, images := container.CheckImagesSource(ctx, instance.Spec.Template.Spec)
-	if !imageToBackupExist{
+	imageToBackupExist, images := container.CheckImagesSource(ctx, instance.Spec.Template.Spec, r.Config.BackupRegistry)
+	if !imageToBackupExist {
 		r.Logger.Info(fmt.Sprintf("Images already backed for application: %s", instance.Name))
 		return reconcile.Result{}, nil
 	}
 
-	newImages, err := container.CopyImagesToBackUpRegistry(ctx, images)
+	newImages, err := container.CopyImagesToBackUpRegistry(ctx, images, r.Config.BackupRegistry)
 	if err != nil {
 		r.Logger.Error(err, "Failed to copy the original image to the backup registry")
 		return reconcile.Result{}, err

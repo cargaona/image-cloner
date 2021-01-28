@@ -1,17 +1,19 @@
 package main
 
 import (
+	clonerConfig "github.com/cargaona/kubermatic-challenge/pkg/configuration"
 	"github.com/cargaona/kubermatic-challenge/pkg/controllers"
+
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -20,7 +22,15 @@ func init() {
 }
 
 func main() {
-	entryLog := log.Log.WithName("entrypoint")
+	entryLog := log.Log.WithName("image-cloner")
+
+	// Load config
+	conf, err := clonerConfig.GetConfig()
+	if err != nil {
+		entryLog.Error(err, "error loading conf")
+		os.Exit(1)
+	}
+
 	//Manager setup
 	entryLog.Info("Setting Up Manager")
 	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{})
@@ -32,10 +42,10 @@ func main() {
 	// Setup a new controller to reconcile deployments
 
 	entryLog.Info("Setting Up Deployment Controller")
-	deploymentReconciler := &controllers.ReconcileDeployment{Client: mgr.GetClient(), Logger: entryLog}
+	deploymentReconciler := &controllers.ReconcileDeployment{Client: mgr.GetClient(), Logger: entryLog, Config: *conf}
 	deploymentController, err := controller.New("deployment-image-cloner", mgr,
 		controller.Options{Reconciler: deploymentReconciler,
-			MaxConcurrentReconciles: 5})
+			MaxConcurrentReconciles: conf.MaxConcurrentReconciles})
 
 	if err != nil {
 		entryLog.Error(err, "Unable to set up Deployment Controller.")
@@ -43,10 +53,10 @@ func main() {
 	}
 
 	entryLog.Info("Setting Up Daemonset Controller")
-	daemonsetReconciler := &controllers.ReconcileDaemonset{Client: mgr.GetClient(), Logger: entryLog}
+	daemonsetReconciler := &controllers.ReconcileDaemonset{Client: mgr.GetClient(), Logger: entryLog, Config: *conf}
 	daemonsetController, err := controller.New("daemonset-image-cloner", mgr,
 		controller.Options{Reconciler: daemonsetReconciler,
-			MaxConcurrentReconciles: 5})
+			MaxConcurrentReconciles: conf.MaxConcurrentReconciles})
 
 	if err != nil {
 		entryLog.Error(err, "Unable to set up Daemonset controller.")
