@@ -29,19 +29,19 @@ func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Re
 
 	err := r.Client.Get(ctx, request.NamespacedName, instance)
 	if errors.IsNotFound(err) {
-		r.Logger.Error(err, "Could not find Daemonset")
+		r.Logger.Error(err, "")
 		return reconcile.Result{}, nil
 	}
 
 	imageToBackupExist, images := container.CheckImagesSource(ctx, instance.Spec.Template.Spec, r.Config.BackupRegistry)
 	if !imageToBackupExist {
-		r.Logger.Info(fmt.Sprintf("Images already backed for application: %s", instance.Name))
+		r.Logger.Info(fmt.Sprintf("Images already backed for %s/%s", instance.Kind, instance.Name))
 		return reconcile.Result{}, nil
 	}
 
 	newImages, err := container.CopyImagesToBackUpRegistry(ctx, images, r.Config.BackupRegistry)
 	if err != nil {
-		r.Logger.Error(err, "Failed to copy the original image to the backup registry")
+		r.Logger.Error(err, fmt.Sprintf("failed to copy the original of %s/%s image to the backup registry", instance.Kind, instance.Name))
 		return reconcile.Result{}, err
 	}
 
@@ -53,7 +53,7 @@ func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Re
 	// Apply the changes on the live object
 	err = r.Client.Update(ctx, instance)
 	if err != nil {
-		r.Logger.Error(err, "Error updating the pod")
+		r.Logger.Error(err, fmt.Sprintf( "error updating pods for %s/%s", instance.Kind, instance.Name))
 		return reconcile.Result{}, err
 	}
 
@@ -64,6 +64,6 @@ func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	r.Logger.Info(fmt.Sprintf("Reconcile completed for Daemonset: %s on Namespace: %s", instance.Name, request.NamespacedName))
+	r.Logger.Info(fmt.Sprintf("Reconcile completed for %s/%s on: %s", instance.Kind, instance.Name, request.NamespacedName))
 	return reconcile.Result{}, nil
 }

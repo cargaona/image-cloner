@@ -40,7 +40,6 @@ func main() {
 	}
 
 	// Setup a new controller to reconcile deployments
-
 	entryLog.Info("Setting Up Deployment Controller")
 	deploymentReconciler := &controllers.ReconcileDeployment{Client: mgr.GetClient(), Logger: entryLog, Config: *conf}
 	deploymentController, err := controller.New("deployment-image-cloner", mgr,
@@ -52,6 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Setup a new controller to reconcile daemonsets
 	entryLog.Info("Setting Up Daemonset Controller")
 	daemonsetReconciler := &controllers.ReconcileDaemonset{Client: mgr.GetClient(), Logger: entryLog, Config: *conf}
 	daemonsetController, err := controller.New("daemonset-image-cloner", mgr,
@@ -63,6 +63,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// watch resources
 	if err := deploymentController.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		entryLog.Error(err, "unable to set up watcher for deployments")
 		os.Exit(1)
@@ -72,8 +73,10 @@ func main() {
 		entryLog.Error(err, "unable to set up watcher for daemonsets")
 		os.Exit(1)
 	}
+
+	// start manager
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
 		entryLog.Error(err, "unable to run manager")
-		os.Exit(0)
+		os.Exit(1)
 	}
 }

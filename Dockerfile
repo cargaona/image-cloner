@@ -13,7 +13,7 @@ RUN go mod download
 COPY main.go main.go
 COPY pkg/ pkg/
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -o manager github.com/cargaona/kubermatic-challenge
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -o manager github.com/cargaona/image-cloner
 
 FROM golang:1.15-alpine
 WORKDIR /
