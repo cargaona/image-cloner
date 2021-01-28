@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= image-cloner:latest
+IMG ?= quay.io/cargaona/image-cloner-controller
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -12,16 +12,16 @@ endif
 manager: generate fmt vet
 	go build -o bin/manager main.go
 
-# Run against the configured Kubernetes cluster in ~/.kube/config
+# Run against the configured Kubernetes cluster in ~/.kube/manifests
 run: generate fmt vet manifests
 	go run ./main.go
 
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/manifests
 
 install:
-	kubectl apply -f config/rbac/rbac.yaml && kubectl apply -f config/deployment/deployment.yaml
+	kubectl apply -f manifests/rbac/rbac.yaml && kubectl apply -f manifests/deployment/deployment.yaml
 deploy:
-	kubectl apply -f config/deployment/deployment.yaml
+	kubectl apply -f manifests/deployment/deployment.yaml
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
@@ -34,6 +34,10 @@ fmt:
 # Run go vet against code
 vet:
 	go vet ./...
+
+registry-secret:
+	kubectl create secret generic registrypullsecret --from-file=.dockerconfigjson=$(PWD)/manifests/imagePullRegistry/configk8s.json --type=kubernetes.io/dockerconfigjson
+	kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "registrypullsecret"}]}'
 
 # Build the docker image
 docker-build:

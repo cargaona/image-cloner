@@ -22,6 +22,7 @@ rules:
       - replicasets
       - daemonsets
     verbs:
+      - update
       - get
       - list
       - watch

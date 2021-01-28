@@ -3,16 +3,18 @@ package container
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/crane"
 	v1 "k8s.io/api/core/v1"
 	"strings"
 )
 
+const backupRegistry = "quay.io/cargaona"
+
 func CheckImagesSource(ctx context.Context, images v1.PodSpec) (bool, map[int]string) {
 	imagesToBackup := make(map[int]string)
 	for index, container := range images.Containers {
-		if imageNotFromBackupRegistry(container.Image) {
+		if imageFromBackupRegistry(container.Image) == false {
 			imagesToBackup[index] = container.Image
 		}
 	}
@@ -24,8 +26,7 @@ func CheckImagesSource(ctx context.Context, images v1.PodSpec) (bool, map[int]st
 	return true, imagesToBackup
 }
 
-func imageNotFromBackupRegistry(image string) bool {
-	backupRegistry := "quay.io/cargaona/"
+func imageFromBackupRegistry(image string) bool {
 	//Can be a better validation
 	if strings.Contains(image, backupRegistry) {
 		return true
@@ -34,11 +35,24 @@ func imageNotFromBackupRegistry(image string) bool {
 }
 
 func CopyImagesToBackUpRegistry(ctx context.Context, images map[int]string) (map[int]string, error) {
-	oldImageName, _ := name.ParseReference("whoami")
-	oldRemoteImage, _:= remote.Image(oldImageName)
-	newImageName, _ := name.ParseReference("whoamibackup")
-	remote.Write(newImageName, oldRemoteImage)
-	return nil, nil
+	newImages := make(map[int]string)
+	for key, imageName := range images {
+		image, err := crane.Pull(imageName)
+		if err != nil {
+			return nil, err
+		}
+		sanitizedName := getCleanImageName(imageName)
+		err = crane.Push(image, fmt.Sprintf("%s/%s", backupRegistry, sanitizedName), crane.WithAuthFromKeychain(authn.DefaultKeychain))
+		if err != nil {
+			return nil, err
+		}
+		newImages[key] = fmt.Sprintf("%s/%s", backupRegistry, sanitizedName)
+	}
+	return newImages, nil
+}
+func getCleanImageName(imageName string) string {
+	sanitizedName := strings.Split(imageName, "/")
+	return sanitizedName[len(sanitizedName)-1]
 }
 
 func ValidateRedeployedDaemonset(ctx context.Context, status int32, deployedImages v1.PodSpec, mustHaveImages map[int]string) error {

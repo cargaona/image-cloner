@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: image-cloner-controller
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+        - args:
+              - --metrics-addr=127.0.0.1:8080
+              - --enable-leader-election
+          command:
+              - /manager
+          image: quay.io/cargaona/image-cloner-controller:latest
+          name: manager
+          resources:
+            limits:
+              cpu: 100m
+              memory: 30Mi
+            requests:
+              cpu: 100m
+              memory: 20Mi
+          volumeMounts:
+            - mountPath: /root/.docker/doc
+              name: docker-config-volume
+      volumes:
+        - name: docker-config-volume
+          configMap:
+            name: docker-config
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-config
+data:
+  config.json: |
+    {
+            "auths": {
+                    "quay.io": {
+                            "auth": "Y2FyZ2FvbmE6c29tZXN0cm9uZ3Bhc3N3b3Jk"
+                    }
+            }
+    }
+
+

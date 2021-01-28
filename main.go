@@ -30,16 +30,17 @@ func main() {
 	}
 
 	// Setup a new controller to reconcile deployments
-	//entryLog.Info("Setting Up Deployment Controller")
-	//deploymentReconciler := &controllers.ReconcileDeployment{Client: mgr.GetClient(), Logger: entryLog}
-	//deploymentController, err := controller.New("deployment-image-cloner", mgr,
-	//	controller.Options{Reconciler: deploymentReconciler,
-	//		MaxConcurrentReconciles: 5})
 
-	//if err != nil {
-	//	entryLog.Error(err, "Unable to set up Deployment Controller.")
-	//	os.Exit(1)
-	//}
+	entryLog.Info("Setting Up Deployment Controller")
+	deploymentReconciler := &controllers.ReconcileDeployment{Client: mgr.GetClient(), Logger: entryLog}
+	deploymentController, err := controller.New("deployment-image-cloner", mgr,
+		controller.Options{Reconciler: deploymentReconciler,
+			MaxConcurrentReconciles: 5})
+
+	if err != nil {
+		entryLog.Error(err, "Unable to set up Deployment Controller.")
+		os.Exit(1)
+	}
 
 	entryLog.Info("Setting Up Daemonset Controller")
 	daemonsetReconciler := &controllers.ReconcileDaemonset{Client: mgr.GetClient(), Logger: entryLog}
@@ -52,10 +53,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	//if err := deploymentController.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForObject{}); err != nil {
-	//	entryLog.Error(err, "Unable to set up watcher for deployments.")
-	//	os.Exit(1)
-	//}
+	if err := deploymentController.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForObject{}); err != nil {
+		entryLog.Error(err, "Unable to set up watcher for deployments.")
+		os.Exit(1)
+	}
 
 	if err := daemonsetController.Watch(&source.Kind{Type: &appsv1.DaemonSet{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		entryLog.Error(err, "Unable to set up watcher for daemonsets.")

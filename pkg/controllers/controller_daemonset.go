@@ -16,11 +16,10 @@ type ReconcileDaemonset struct {
 	Logger logr.Logger
 }
 
-//Do we need this one?
-//var _ reconcile.Reconciler = &ReconcileDeployment{}
 
 func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	instance := &appsv1.DaemonSet{}
+
 	// Ignore all pods on kube-system namespace.
 	if request.Namespace == "kube-system" {
 		r.Logger.Info("Ignoring application since it's deployed on the kube-system namespace")
@@ -33,9 +32,9 @@ func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Re
 		return reconcile.Result{}, nil
 	}
 
-	ImageToBackupExist, images := container.CheckImagesSource(ctx, instance.Spec.Template.Spec)
-	if !ImageToBackupExist {
-		r.Logger.Info("Images already backed")
+	imageToBackupExist, images := container.CheckImagesSource(ctx, instance.Spec.Template.Spec)
+	if !imageToBackupExist{
+		r.Logger.Info(fmt.Sprintf("Images already backed for application: %s", instance.Name))
 		return reconcile.Result{}, nil
 	}
 
@@ -45,7 +44,7 @@ func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	// Update Image on Spec.
+	// Change the images on for every container within the pod.
 	for key, value := range newImages {
 		instance.Spec.Template.Spec.Containers[key].Image = value
 	}
