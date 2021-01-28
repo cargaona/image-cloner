@@ -25,9 +25,21 @@ config.json: |
           }
         }
 ```
+5. Complete the "image-cloner-configuration" configMap. More info on [Configuration](#Configuration)
 5. It's also recommended creating a secret with the container registry credentials and attach it to the serviceAccount in order to give access to the resources to your new registry. You can find info about it [here.](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-imagepullsecrets-to-a-service-account)
-6. You can deploy all the content on ./manifests manually or just run ```make deploy``` if you are logged to your cluster in the right namespaces.
+7. You can deploy all the content on ./manifests manually or just run ```make deploy``` if you are logged to your cluster in the right namespaces.
 
+
+### Configuration
+There are some configurations you need, and you can do to  ##image-cloner-controller##.
+These configurations live in the "image-cloner-configuration" configMap.
+Details:
+
+| Value | Description | Default | Optional |
+| ----  | ---         | ---     | ---      |
+|MAX_CONCURRENT_RECONCILES| Max number of concurrent reconcile loops. Since uploading images is a heavy operation it can consumes a lot of your node resources if you don't limit the number of simultaneous uploads. | 5|
+|NAMESPACES_TO_IGNORE | There are some namespaces you will want to ignore and leave it with the existing images. Place the name of the namespaces you want to ignore here comma separated. | kube-proxy (hard default, within the code) |  
+|BACKUP_REGISTRY | The direction of your backup registry. Example: quay.io/cargaona |  - | No |
 ### Notes
 Since this is just an MVP, there are some things you need to have in mind.
 
