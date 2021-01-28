@@ -1,8 +1,8 @@
 package main
 
 import (
-	clonerConfig "github.com/cargaona/kubermatic-challenge/pkg/configuration"
-	"github.com/cargaona/kubermatic-challenge/pkg/controllers"
+	clonerConfig "github.com/cargaona/image-cloner/pkg/configuration"
+	"github.com/cargaona/image-cloner/pkg/controllers"
 
 	"os"
 
@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	log.SetLogger(zap.New())
+	log.SetLogger(zap.New(zap.UseDevMode(true)))
 }
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 	// Load config
 	conf, err := clonerConfig.GetConfig()
 	if err != nil {
-		entryLog.Error(err, "error loading conf")
+		entryLog.Error(err, "error loading configuration")
 		os.Exit(1)
 	}
 
@@ -35,7 +35,7 @@ func main() {
 	entryLog.Info("Setting Up Manager")
 	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{})
 	if err != nil {
-		entryLog.Error(err, "Unable to set up Controller-Manager.")
+		entryLog.Error(err, "unable to set up controller-manager")
 		os.Exit(1)
 	}
 
@@ -48,7 +48,7 @@ func main() {
 			MaxConcurrentReconciles: conf.MaxConcurrentReconciles})
 
 	if err != nil {
-		entryLog.Error(err, "Unable to set up Deployment Controller.")
+		entryLog.Error(err, "unable to set up deployment controller")
 		os.Exit(1)
 	}
 
@@ -59,21 +59,21 @@ func main() {
 			MaxConcurrentReconciles: conf.MaxConcurrentReconciles})
 
 	if err != nil {
-		entryLog.Error(err, "Unable to set up Daemonset controller.")
+		entryLog.Error(err, "unable to set up daemonset controller")
 		os.Exit(1)
 	}
 
 	if err := deploymentController.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		entryLog.Error(err, "Unable to set up watcher for deployments.")
+		entryLog.Error(err, "unable to set up watcher for deployments")
 		os.Exit(1)
 	}
 
 	if err := daemonsetController.Watch(&source.Kind{Type: &appsv1.DaemonSet{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		entryLog.Error(err, "Unable to set up watcher for daemonsets.")
+		entryLog.Error(err, "unable to set up watcher for daemonsets")
 		os.Exit(1)
 	}
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		entryLog.Error(err, "Unable to run manager")
+		entryLog.Error(err, "unable to run manager")
 		os.Exit(0)
 	}
 }

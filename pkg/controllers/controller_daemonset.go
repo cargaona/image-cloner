@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/cargaona/kubermatic-challenge/pkg/configuration"
-	"github.com/cargaona/kubermatic-challenge/pkg/container"
+	"github.com/cargaona/image-cloner/pkg/configuration"
+	"github.com/cargaona/image-cloner/pkg/container"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -21,9 +21,9 @@ type ReconcileDaemonset struct {
 func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	instance := &appsv1.DaemonSet{}
 
-	// Ignore all pods on kube-system namespace.
-	if request.Namespace == "kube-system" {
-		r.Logger.Info("Ignoring application since it's deployed on the kube-system namespace")
+	// Ignore all pods on configured ignored namespaces.
+	if containsString(r.Config.NamespacesToIgnore, request.Namespace) {
+		r.Logger.Info(fmt.Sprintf("Ignoring application since it's deployed on the %s namespace", request.Namespace))
 		return reconcile.Result{}, nil
 	}
 

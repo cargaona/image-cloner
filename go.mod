@@ -1,4 +1,4 @@
-module github.com/cargaona/kubermatic-challenge
+module github.com/cargaona/image-cloner
 
 go 1.15
 

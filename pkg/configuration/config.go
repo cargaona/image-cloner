@@ -14,8 +14,16 @@ type Config struct {
 }
 func GetConfig() (*Config, error) {
 	namespaces := os.Getenv("NAMESPACES_TO_IGNORE")
-	namespacesList := strings.Split(namespaces, ",")
+	var namespacesList []string
+	if namespaces != "" {
+		namespacesList = strings.Split(namespaces, ",")
+	}
 	maxReconciles, _:= strconv.Atoi(os.Getenv("MAX_CONCURRENT_RECONCILES"))
+
+	// Sanitize spaces after commas on namespaces.
+	for index, ns := range namespacesList{
+		namespacesList[index] = strings.TrimSpace(ns)
+	}
 
 	configuration := Config{
 		BackupRegistry:    os.Getenv("BACKUP_REGISTRY"),
@@ -27,8 +35,8 @@ func GetConfig() (*Config, error) {
 		return nil, fmt.Errorf("no backup registry configured")
 	}
 
-	if len(configuration.NamespacesToIgnore) == 0 {
-		configuration.NamespacesToIgnore[0] = "kube-system"
+	if configuration.NamespacesToIgnore == nil {
+		configuration.NamespacesToIgnore = append(configuration.NamespacesToIgnore,"kube-system")
 	}
 
 	if configuration.MaxConcurrentReconciles == 0 {

@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/cargaona/kubermatic-challenge/pkg/configuration"
-	"github.com/cargaona/kubermatic-challenge/pkg/container"
+	"github.com/cargaona/image-cloner/pkg/configuration"
+	"github.com/cargaona/image-cloner/pkg/container"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -18,14 +18,15 @@ import (
 type ReconcileDeployment struct {
 	Client client.Client
 	Logger logr.Logger
-	Config   configuration.Config
+	Config configuration.Config
 }
 
 func (r *ReconcileDeployment) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	instance := &appsv1.Deployment{}
 
-	// Ignore all pods on kube-system namespace.
-	if request.Namespace == "kube-system" {
+	// Ignore all pods on configured ignored namespaces.
+	if containsString(r.Config.NamespacesToIgnore, request.Namespace) {
+		r.Logger.Info(fmt.Sprintf("Ignoring application since it's deployed on the %s namespace", request.Namespace))
 		return reconcile.Result{}, nil
 	}
 
