@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-dns-private
+  labels:
+    app: external-dns-private
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: external-dns-private
+  template:
+    metadata:
+      labels:
+        app: external-dns-private
+    spec:
+      serviceAccountName: external-dns-private
+      containers:
+      - name: external-dns-private
+        image: registry.opensource.zalan.do/teapot/external-dns:v0.5.18
+    
+        args:
+        - --source=service
+        - --zone-id-filter=Z05619633L2BGCMQUM1LQ
+        - --provider=aws
+        #- --policy=create-only
+        - --registry=txt
+        - --txt-owner-id=sre
+        - --namespace=default
+        - --aws-zone-type=private
+        - --log-level=debug
+        - --annotation-filter=external-dns-private=true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50M
+          limits:
+            cpu: 50m
+            memory: 50M
