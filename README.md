@@ -40,8 +40,15 @@ Details:
 |MAX_CONCURRENT_RECONCILES| Max number of concurrent reconcile loops. Since uploading images is a heavy operation it can consumes a lot of your node resources if you don't limit the number of simultaneous uploads. | 5|
 |NAMESPACES_TO_IGNORE | There are some namespaces you will want to ignore and leave it with the existing images. Place the name of the namespaces you want to ignore here comma separated. | kube-proxy (hard default, within the code) |
 |BACKUP_REGISTRY | The direction of your backup registry. Example: quay.io/cargaona |  - | No |
+
 ### Notes
 Since this is just an MVP, there are some things you need to have in mind.
 
 - The controller needs the Cluster Admin to provision the container registry credentials for each namespace. Create the secret with the credentials and add it to the default serviceAccount it's a good way to start. If you don't want to do that change on every namespace, you can use some tools like [imagepullsecret-patcher](https://github.com/titansoft-pte-ltd/imagepullsecret-patcher) or [kubernetes-reflector](https://github.com/EmberStack/kubernetes-reflector)
 - It's not compatible with [Schema v1 images](https://docs.docker.com/registry/spec/deprecated-schema-v1/).
+
+### Next features
+- Implement mutating webhook to change the images of new incoming pods.
+- Implement validating webhook to make sure the pods we are deploying have images from our backup registry.
+- Activate/Deactivate webhooks feature. It could be and argument or an environment variable passed through confipMap.
+- Add support to schema v1 images using go-container-registry libraries instead of just using crane.

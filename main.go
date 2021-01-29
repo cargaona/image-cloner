@@ -3,6 +3,7 @@ package main
 import (
 	clonerConfig "github.com/cargaona/image-cloner/pkg/configuration"
 	"github.com/cargaona/image-cloner/pkg/controllers"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"os"
 
@@ -74,9 +75,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	//Setup webhooks
+	entryLog.Info("setting up webhook server")
+	hookServer := mgr.GetWebhookServer()
+
+	entryLog.Info("registering webhooks to the webhook server")
+	hookServer.Register("/mutate-v1-pod", &webhook.Admission{Handler: &controllers.PodAnnotator{Client: mgr.GetClient()}})
+
 	// start manager
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
 		entryLog.Error(err, "unable to run manager")
 		os.Exit(1)
+
 	}
 }
