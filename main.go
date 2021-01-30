@@ -81,8 +81,8 @@ func main() {
 	hookServer := mgr.GetWebhookServer()
 
 	entryLog.Info("registering webhooks to the webhook server")
-	hookServer.Register("/mutate-v1-pod", &webhook.Admission{Handler: &webhooks.PodImageMutator{Client: mgr.GetClient(), Config: *conf}})
-	hookServer.Register("/validate-v1-pod", &webhook.Admission{Handler: &webhooks.PodImageValidator{Client: mgr.GetClient(), Config: *conf}})
+	//hookServer.Register("/mutate-v1-pod", &webhook.Admission{Handler: &webhooks.PodImageMutator{Client: mgr.GetClient(), Config: *conf, Logger: entryLog}})
+	hookServer.Register("/validate-deployment", &webhook.Admission{Handler: &webhooks.DeploymentImageValidator{Client: mgr.GetClient(), Config: *conf, Logger: entryLog}})
 
 	// start manager
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {

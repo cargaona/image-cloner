@@ -19,10 +19,23 @@ run: generate fmt vet manifests
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/manifests
 
 install:
-	kubectl apply -f .manifests/rbac/rbac.yaml && kubectl apply -f .manifests/deployment/deployment.yaml
-deploy:
-	kubectl apply -f .manifests/deployment/deployment.yaml
+	kubectl apply -f .manifests/deployment.yaml
+	kubectl apply -f .manifests/rbac.yaml
 
+uninstall:
+	kubectl delete -f .manifests/
+
+deploy:
+	kubectl apply -f .manifests/deployment.yaml
+
+delete-deploy:
+	kubectl delete -f .manifests/deployment.yaml
+
+install-webhooks:
+	kubectl apply -f .manifests/webhooks.yaml
+
+delete-webhooks:
+	kubectl delete -f .manifests/webhooks.yaml
 # Run go fmt against code
 fmt:
 	go fmt ./...
@@ -46,8 +59,6 @@ docker-push:
 docker-prune:
 	docker system prune --force --all
 
-delete-deploy:
-	kubectl delete deployment image-cloner-controller
 
 redeploy: docker-build docker-push docker-prune delete-deploy install
 
