@@ -82,7 +82,7 @@ func main() {
 
 	entryLog.Info("registering webhooks to the webhook server")
 	hookServer.Register("/mutate-v1-pod", &webhook.Admission{Handler: &webhooks.PodImageMutator{Client: mgr.GetClient(), Config: *conf}})
-	hookServer.Register("validate-v1-pod", &webhook.Admission{Handler: &webhooks.PodImageValidator{Client: mgr.GetClient(), Config: *conf}})
+	hookServer.Register("/validate-v1-pod", &webhook.Admission{Handler: &webhooks.PodImageValidator{Client: mgr.GetClient(), Config: *conf}})
 
 	// start manager
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
