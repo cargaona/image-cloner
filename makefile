@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= quay.io/cargaona/image-cloner-controller
+IMG ?= quay.io/cargaona/image-cloner-controller:webhook
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))

@@ -3,11 +3,27 @@ package container
 import (
 	"context"
 	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 	v1 "k8s.io/api/core/v1"
 	"strings"
 )
+
+func CheckImagesSourceFromPod(pod *corev1.Pod, backupRegistry string) (bool, map[int]string){
+	imagesToBackup := make(map[int]string)
+	for index, container := range pod.Spec.Containers {
+		if imageFromBackupRegistry(container.Image, backupRegistry) == false {
+			imagesToBackup[index] = container.Image
+		}
+	}
+	// Nothing to backup
+	if len(imagesToBackup) == 0 {
+		return false, imagesToBackup
+	}
+	return true, imagesToBackup
+}
 
 
 func CheckImagesSource(ctx context.Context, images v1.PodSpec, backupRegistry string) (bool, map[int]string) {

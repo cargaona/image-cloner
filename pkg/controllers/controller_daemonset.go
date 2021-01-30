@@ -47,6 +47,7 @@ func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Re
 
 	// Change the images on for every container within the pod.
 	for key, value := range newImages {
+
 		instance.Spec.Template.Spec.Containers[key].Image = value
 	}
 
