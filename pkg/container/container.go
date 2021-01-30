@@ -54,16 +54,3 @@ func getCleanImageName(imageName string) string {
 	return sanitizedName[len(sanitizedName)-1]
 }
 
-func ValidateRedeployedDaemonset(ctx context.Context, status int32, deployedImages v1.PodSpec, mustHaveImages map[int]string) error {
-	if status > 0 {
-		return fmt.Errorf("there are unavailable daemonsets")
-	}
-	for key, value := range mustHaveImages {
-		if deployedImages.Containers[key].Image == value {
-			continue
-		} else {
-			return fmt.Errorf("image %s from container %s was not redeployed succesfully", value, deployedImages.Containers[key].Name)
-		}
-	}
-	return nil
-}
