@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= quay.io/cargaona/image-cloner-controller:webhook
+IMG ?= quay.io/cargaona/image-cloner-controller:v0.1
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -9,20 +9,25 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-manager: generate fmt vet
+manager: fmt vet
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/manifests
-run: generate fmt vet manifests
+run: fmt vet manifests
 	go run ./main.go
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/manifests
 
-install:
-	kubectl apply -f .manifests/deployment.yaml
+install: registry-secret certs deploy rbac webhooks
+
+certs:
+	kubectl create secret tls webhook-certs --cert=cert/server.pem --key=cert/server-key.pem
+rbac:
 	kubectl apply -f .manifests/rbac.yaml
 
 uninstall:
+	kubectl delete secret registrypullsecret
+	kubectl delete secret webhook-certs
 	kubectl delete -f .manifests/
 
 deploy:
@@ -31,7 +36,7 @@ deploy:
 delete-deploy:
 	kubectl delete -f .manifests/deployment.yaml
 
-install-webhooks:
+webhooks:
 	kubectl apply -f .manifests/webhooks.yaml
 
 delete-webhooks:
@@ -60,5 +65,5 @@ docker-prune:
 	docker system prune --force --all
 
 
-redeploy: docker-build docker-push docker-prune delete-deploy install
+redeploy: docker-build docker-push docker-prune uninstall install
 

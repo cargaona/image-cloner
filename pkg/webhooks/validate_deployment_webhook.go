@@ -29,15 +29,11 @@ func (a *DeploymentImageValidator) Handle(ctx context.Context, req admission.Req
 
 	imagesToBackupExist, imagesToBackup := container.CheckImagesSource(ctx, instance.Spec.Template.Spec, a.Config.BackupRegistry)
 
-	//if instance.Annotations["image-cloner-controller.backed-images"] != "true" {
-	//	return admission.Denied(fmt.Sprintf("Missing annotation for instancepod/%s", pod.Name))
-	//}
-
 	if imagesToBackupExist != false {
-		return admission.Denied(fmt.Sprintf("There are images to backup %v", imagesToBackup))
+		return admission.Denied(fmt.Sprintf("There are images to backup %v. Change your image for a backed one in %s before update the resource. ", imagesToBackup, a.Config.BackupRegistry))
 	}
 
-	return admission.Allowed("")
+	return admission.Allowed(fmt.Sprintf("All the images used by the resource %s/%s on %s are backed.",instance.Kind, instance.Name, instance.Namespace ))
 }
 
 func (a *DeploymentImageValidator) InjectDecoder(d *admission.Decoder) error {

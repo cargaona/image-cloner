@@ -81,7 +81,7 @@ func main() {
 	hookServer := mgr.GetWebhookServer()
 
 	entryLog.Info("registering webhooks to the webhook server")
-	//hookServer.Register("/mutate-v1-pod", &webhook.Admission{Handler: &webhooks.PodImageMutator{Client: mgr.GetClient(), Config: *conf, Logger: entryLog}})
+	hookServer.Register("/validate-daemonset", &webhook.Admission{Handler: &webhooks.DaemonsetImageValidator{Client: mgr.GetClient(), Config: *conf, Logger: entryLog}})
 	hookServer.Register("/validate-deployment", &webhook.Admission{Handler: &webhooks.DeploymentImageValidator{Client: mgr.GetClient(), Config: *conf, Logger: entryLog}})
 
 	// start manager

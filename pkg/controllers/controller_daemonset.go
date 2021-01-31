@@ -58,13 +58,6 @@ func (r *ReconcileDaemonset) Reconcile(ctx context.Context, request reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	//TODO pass just the instance object to the function
-	err = container.ValidateRedeployedDaemonset(ctx, instance.Status.NumberUnavailable, instance.Spec.Template.Spec, newImages)
-	if err != nil {
-		r.Logger.Error(err, "The validation was not successful.")
-		return reconcile.Result{}, err
-	}
-
 	r.Logger.Info(fmt.Sprintf("Reconcile completed for %s/%s on: %s", instance.Kind, instance.Name, request.NamespacedName))
 	return reconcile.Result{}, nil
 }
