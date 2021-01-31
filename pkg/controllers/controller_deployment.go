@@ -60,13 +60,6 @@ func (r *ReconcileDeployment) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	//TODO build ValidateRedeployedDeployment
-	//err = container.ValidateRedeployedDeployment(ctx, instance, image)
-	//if err != nil {
-	//	r.Logger.Error(err, "The validation was not successful.")
-	//	return reconcile.Result{}, err
-	//}
-
 	r.Logger.Info(fmt.Sprintf("Reconcile completed for %s/%s on: %s", instance.Kind, instance.Name, request.NamespacedName))
 	return reconcile.Result{}, nil
 }

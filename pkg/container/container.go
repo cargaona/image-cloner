@@ -4,27 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 	v1 "k8s.io/api/core/v1"
 	"strings"
 )
-
-func CheckImagesSourceFromPod(pod *corev1.Pod, backupRegistry string) (bool, map[int]string){
-	imagesToBackup := make(map[int]string)
-	for index, container := range pod.Spec.Containers {
-		if imageFromBackupRegistry(container.Image, backupRegistry) == false {
-			imagesToBackup[index] = container.Image
-		}
-	}
-	// Nothing to backup
-	if len(imagesToBackup) == 0 {
-		return false, imagesToBackup
-	}
-	return true, imagesToBackup
-}
-
 
 func CheckImagesSource(ctx context.Context, images v1.PodSpec, backupRegistry string) (bool, map[int]string) {
 	imagesToBackup := make(map[int]string)
@@ -42,7 +26,7 @@ func CheckImagesSource(ctx context.Context, images v1.PodSpec, backupRegistry st
 }
 
 func imageFromBackupRegistry(image string, backupRegistry string) bool {
-	//Can be a better validation
+	//TODO: improve this validation.
 	if strings.Contains(image, backupRegistry) {
 		return true
 	}
@@ -50,6 +34,8 @@ func imageFromBackupRegistry(image string, backupRegistry string) bool {
 }
 
 func CopyImagesToBackUpRegistry(ctx context.Context, images map[int]string, backupRegistry string) (map[int]string, error) {
+	//TODO: Support for schema v1 images and put more attention on the tags.
+
 	newImages := make(map[int]string)
 	for key, imageName := range images {
 		image, err := crane.Pull(imageName)
@@ -65,21 +51,9 @@ func CopyImagesToBackUpRegistry(ctx context.Context, images map[int]string, back
 	}
 	return newImages, nil
 }
+
 func getCleanImageName(imageName string) string {
 	sanitizedName := strings.Split(imageName, "/")
 	return sanitizedName[len(sanitizedName)-1]
 }
 
-func ValidateRedeployedDaemonset(ctx context.Context, status int32, deployedImages v1.PodSpec, mustHaveImages map[int]string) error {
-	if status > 0 {
-		return fmt.Errorf("there are unavailable daemonsets")
-	}
-	for key, value := range mustHaveImages {
-		if deployedImages.Containers[key].Image == value {
-			continue
-		} else {
-			return fmt.Errorf("image %s from container %s was not redeployed succesfully", value, deployedImages.Containers[key].Name)
-		}
-	}
-	return nil
-}
