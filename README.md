@@ -6,29 +6,30 @@ Also, this controller can prevent you from issues like [this one with Docker Pul
 
 ### Installation
 There is a makefile to help with the development of this project and also will serve to install the controller in your cluster.
-1. Create a container-registry wherever you wish. (docker-hub / quay.io are the common choices.)
-2. Run docker login with the registry you created.
-3. Look for the credentials on ~/.docker/config.json. You will need it for the setup of the controller and also for the imagePullSecret.
-4. Copy the content of the json to the "docker-config" configMap. (Take care of copying just the part of the registry you will use for the controller.)
-   It will look something like this:
+1. Copy the content of `manifests/` to a new `.manifests/`. 
+2. Create a container-registry wherever you wish. (docker-hub / quay.io are the common choices.)
+   1. Run docker login with the registry you created.
+   2. Look for the credentials on `~/.docker/config.json` You will need it for the setup of the controller and also for the imagePullSecret.
+   3. Copy the content of the json to `.manifests/imagePullRegistry/configk8s.json`
+   4. Copy the content of the json to the "docker-config" configMap. (Take care of copying just the part of the registry you will use for the controller.)It will look something like this:
 ```yaml
-apiVersion: v1
+   apiVersion: v1
 kind: ConfigMap
 metadata:
 name: docker-configuration
 data:
 config.json: |
         {
-          "auths": {
-            "quay.io": {
-              "auth": "yourkeys"
-            }
-          }
-        }
+     "auths": {
+       "quay.io": {
+         "auth": "yourkeys"
+       }
+     }
+   }
 ```
-5. Complete the "image-cloner-configuration" configMap. More info on [Configuration](#Configuration)
-7. It's also recommended creating a secret with the container registry credentials and attach it to the serviceAccount in order to give access to the resources to your new registry. You can find info about it [here.](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-imagepullsecrets-to-a-service-account)
-7. You can deploy all the content on ./manifests manually or just run ```make install``` if you are logged to your cluster in the right namespace.
+3. Complete the "image-cloner-configuration" configMap. More info on [Configuration](#Configuration)
+4. It's also recommended creating a secret with the container registry credentials and attach it to the serviceAccount in order to give access to the resources to your new registry. You can find info about it [here.](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-imagepullsecrets-to-a-service-account)
+5. You can deploy all the content on `./manifests` manually or just run ```make install``` if you are logged to your cluster in the right namespace.
 
 
 ### Configuration
@@ -65,4 +66,4 @@ Since this is just an MVP, there are some things you need to have in mind.
 ### Next features
 - Add support to schema v1 images using go-container-registry libraries instead of just using crane.
 - Replace current certs for webhooks and start using cert-manager.
-- Implement mutating webhook to backup images for newly created Deployments and Daemonsets. 
+- Implement mutating webhook to back up images for newly created Deployments and Daemonsets. 
