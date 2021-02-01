@@ -3,12 +3,12 @@ package container
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 	v1 "k8s.io/api/core/v1"
 	"strings"
 )
-
 
 func CheckImagesSource(ctx context.Context, images v1.PodSpec, backupRegistry string) (bool, map[int]string) {
 	imagesToBackup := make(map[int]string)
@@ -26,7 +26,7 @@ func CheckImagesSource(ctx context.Context, images v1.PodSpec, backupRegistry st
 }
 
 func imageFromBackupRegistry(image string, backupRegistry string) bool {
-	//Can be a better validation
+	//TODO: improve this validation.
 	if strings.Contains(image, backupRegistry) {
 		return true
 	}
@@ -34,6 +34,8 @@ func imageFromBackupRegistry(image string, backupRegistry string) bool {
 }
 
 func CopyImagesToBackUpRegistry(ctx context.Context, images map[int]string, backupRegistry string) (map[int]string, error) {
+	//TODO: Support for schema v1 images and put more attention on the tags.
+
 	newImages := make(map[int]string)
 	for key, imageName := range images {
 		image, err := crane.Pull(imageName)
@@ -49,6 +51,7 @@ func CopyImagesToBackUpRegistry(ctx context.Context, images map[int]string, back
 	}
 	return newImages, nil
 }
+
 func getCleanImageName(imageName string) string {
 	sanitizedName := strings.Split(imageName, "/")
 	return sanitizedName[len(sanitizedName)-1]

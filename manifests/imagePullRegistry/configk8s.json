@@ -1,0 +1,7 @@
+{
+	"auths": {
+		"your-registry-adress": {
+			"auth": "yourkeys"
+		}
+	}
+}
